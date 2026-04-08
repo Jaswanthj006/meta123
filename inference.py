@@ -72,32 +72,17 @@ def main() -> None:
     print(f"[START] task={TASK_NAME} env={ENV_NAME} model={disp_model}", flush=True)
 
     try:
-<<<<<<< HEAD
-        if HF_TOKEN:
-            client = OpenAI(
-                base_url="https://router.huggingface.co/v1",
-                api_key=HF_TOKEN,
-            )
-            client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[{"role": "user", "content": "test"}],
-                max_tokens=5,
-            )
-    except Exception:
-        pass
-=======
         client = OpenAI(
-            base_url=API_BASE_URL or "https://router.huggingface.co/v1",
-            api_key=HF_TOKEN or "dummy",
+            base_url=os.environ["API_BASE_URL"],
+            api_key=os.environ["API_KEY"],
         )
         client.chat.completions.create(
-            model=MODEL_NAME or "gpt-4o-mini",
-            messages=[{"role": "user", "content": "test"}],
+            model=os.environ["MODEL_NAME"],
+            messages=[{"role": "user", "content": "hello"}],
             max_tokens=5,
         )
     except Exception:
-        _ = None
->>>>>>> f672bcd (final fix)
+        pass
 
     rewards = []
     step_num = 0
@@ -108,11 +93,7 @@ def main() -> None:
     try:
         last_obs = _post_json(f"{base}/reset", {})
         if not last_obs:
-<<<<<<< HEAD
             raise ValueError("Empty response")
-=======
-            raise ValueError
->>>>>>> f672bcd (final fix)
     except Exception:
         print(f"[END] success=false steps=0 score=0.00 rewards=", flush=True)
         return
@@ -129,10 +110,6 @@ def main() -> None:
         step_num += 1
         reward = 0.0
         err_out = "null"
-<<<<<<< HEAD
-        action_label = f"{action_type}:{value}"
-=======
->>>>>>> f672bcd (final fix)
 
         try:
             result = _post_json(
@@ -141,14 +118,8 @@ def main() -> None:
             )
 
             if not result:
-<<<<<<< HEAD
                 raise ValueError("Empty step response")
 
-            last_obs = result.get("observation", last_obs)
-=======
-                raise ValueError
-
->>>>>>> f672bcd (final fix)
             reward = float(result.get("reward", 0.0))
             done = bool(result.get("done", False))
 
@@ -172,12 +143,7 @@ def main() -> None:
         if done:
             break
 
-<<<<<<< HEAD
-    total = sum(rewards)
-    score = max(0.0, min(1.0, total))
-=======
     score = min(1.0, sum(rewards))
->>>>>>> f672bcd (final fix)
     success = bool(done and not any_error)
 
     rewards_fmt = ",".join(f"{r:.2f}" for r in rewards)
