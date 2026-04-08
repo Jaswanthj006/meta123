@@ -1,8 +1,8 @@
 ---
 title: Customer Support Environment
 emoji: 🤖
-colorFrom: blue
-colorTo: indigo
+colorFrom: indigo
+colorTo: purple
 sdk: docker
 app_port: 7860
 ---
