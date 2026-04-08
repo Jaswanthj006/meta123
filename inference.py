@@ -147,7 +147,7 @@ def main() -> None:
         if done:
             continue
 
-    
+    # FIX: use average instead of sum to keep score strictly within (0, 1)
     score = sum(rewards) / len(rewards) if rewards else 0.5
     score = max(0.01, min(0.99, score))
 
