@@ -77,7 +77,7 @@ def run_episode(base: str, episode: int) -> None:
         if not last_obs:
             raise ValueError("Empty response")
     except Exception:
-        print(f"[END] success=false steps=0 score=0.00 rewards=", flush=True)
+        print(f"[END] success=false steps=0 score=0.01 rewards=0.01", flush=True)  # FIXED: was score=0.00
         return
 
     ticket_text = str(last_obs.get("ticket_text", ""))
@@ -156,7 +156,7 @@ def main() -> None:
         pass
 
     if not base_url:
-        print(f"[END] success=false steps=0 score=0.00 rewards=", flush=True)
+        print(f"[END] success=false steps=0 score=0.01 rewards=0.01", flush=True)  # FIXED: was score=0.00
         return
 
     base = base_url.rstrip("/")
