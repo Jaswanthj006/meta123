@@ -122,8 +122,6 @@ def main() -> None:
                 {"action_type": action_type, "value": value},
             )
 
-           
-
             raw_reward = float(result.get("reward", 0.5))
             reward = max(0.01, min(0.99, raw_reward))
 
@@ -149,7 +147,9 @@ def main() -> None:
         if done:
             continue
 
-    score = max(0.01, min(0.99, sum(rewards)))
+    
+    score = sum(rewards) / len(rewards) if rewards else 0.5
+    score = max(0.01, min(0.99, score))
 
     success = bool(done and not any_error)
 
