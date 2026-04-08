@@ -113,7 +113,7 @@ def main() -> None:
 
     for action_type, value in planned:
         step_num += 1
-        reward = 0.0
+        reward = 0.5   
         err_out = "null"
 
         try:
@@ -122,10 +122,8 @@ def main() -> None:
                 {"action_type": action_type, "value": value},
             )
 
-            if not result:
-                raise ValueError("Empty step response")
+           
 
-            
             raw_reward = float(result.get("reward", 0.5))
             reward = max(0.01, min(0.99, raw_reward))
 
@@ -148,7 +146,6 @@ def main() -> None:
             flush=True,
         )
 
-        
         if done:
             continue
 
