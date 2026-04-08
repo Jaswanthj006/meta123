@@ -69,6 +69,7 @@ def main() -> None:
 
     print(f"[START] task={TASK_NAME} env={ENV_NAME} model={MODEL_NAME}", flush=True)
 
+    # LLM call (safe)
     try:
         if base_url and api_key:
             client = OpenAI(
@@ -148,8 +149,8 @@ def main() -> None:
         if done:
             break
 
-    # ✅ ONLY FIX APPLIED HERE
-    score = min(0.99, sum(rewards))
+    
+    score = max(0.01, min(0.99, sum(rewards)))
 
     success = bool(done and not any_error)
 
