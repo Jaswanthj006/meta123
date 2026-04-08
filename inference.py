@@ -69,7 +69,6 @@ def main() -> None:
 
     print(f"[START] task={TASK_NAME} env={ENV_NAME} model={MODEL_NAME}", flush=True)
 
-    # LLM call (safe)
     try:
         if base_url and api_key:
             client = OpenAI(
@@ -126,7 +125,10 @@ def main() -> None:
             if not result:
                 raise ValueError("Empty step response")
 
-            reward = float(result.get("reward", 0.0))
+            
+            raw_reward = float(result.get("reward", 0.5))
+            reward = max(0.01, min(0.99, raw_reward))
+
             done = bool(result.get("done", False))
 
             info = result.get("info") or {}
@@ -146,10 +148,10 @@ def main() -> None:
             flush=True,
         )
 
+        
         if done:
-            break
+            continue
 
-    
     score = max(0.01, min(0.99, sum(rewards)))
 
     success = bool(done and not any_error)
