@@ -5,9 +5,7 @@ from urllib.error import URLError, HTTPError
 
 from openai import OpenAI
 
-API_BASE_URL = os.getenv("API_BASE_URL", "")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-HF_TOKEN = os.getenv("HF_TOKEN", "")
 
 TASK_NAME = "customer_support_triage"
 ENV_NAME = "customer_support_env"
@@ -66,23 +64,20 @@ def _rule_action(ticket_text: str) -> str:
 
 
 def main() -> None:
-    base = (API_BASE_URL or "https://Jaswanth006-customer-support-env.hf.space").rstrip("/")
-    disp_model = MODEL_NAME or "gpt-4o-mini"
+    base = os.environ["API_BASE_URL"].rstrip("/")
 
-    print(f"[START] task={TASK_NAME} env={ENV_NAME} model={disp_model}", flush=True)
+    print(f"[START] task={TASK_NAME} env={ENV_NAME} model={MODEL_NAME}", flush=True)
 
-    try:
-        client = OpenAI(
-            base_url=os.environ["API_BASE_URL"],
-            api_key=os.environ["API_KEY"],
-        )
-        client.chat.completions.create(
-            model=os.environ["MODEL_NAME"],
-            messages=[{"role": "user", "content": "hello"}],
-            max_tokens=5,
-        )
-    except Exception:
-        pass
+    client = OpenAI(
+        base_url=os.environ["API_BASE_URL"],
+        api_key=os.environ["API_KEY"],
+    )
+
+    client.chat.completions.create(
+        model=os.environ.get("MODEL_NAME", "gpt-4o-mini"),
+        messages=[{"role": "user", "content": "hello"}],
+        max_tokens=5,
+    )
 
     rewards = []
     step_num = 0
