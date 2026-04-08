@@ -26,15 +26,6 @@ class StepResult(BaseModel):
 
 
 class CustomerSupportEnv:
-    """
-    Deterministic environment skeleton for customer support ticket handling.
-
-    Notes:
-    - No reward logic is implemented yet (placeholder reward = 0.0).
-    - No grading/correctness validation is implemented yet.
-    - No randomness is used anywhere.
-    """
-
     def __init__(self) -> None:
         self.task_definitions: Dict[str, Dict[str, Any]] = {
             "easy": {
@@ -106,14 +97,15 @@ class CustomerSupportEnv:
             "action_done": False,
         }
 
+    # ✅ FIXED: no 0.0 / 1.0
     def grade_classification(self, predicted: str, actual: str) -> float:
         if predicted == actual:
-            return 1.0
-        return 0.0
+            return 0.99
+        return 0.01
 
     def grade_priority(self, predicted: str, actual: str) -> float:
         if predicted == actual:
-            return 1.0
+            return 0.99
 
         close_pairs = {
             frozenset(("medium", "high")),
@@ -121,21 +113,20 @@ class CustomerSupportEnv:
         }
         if frozenset((predicted, actual)) in close_pairs:
             return 0.5
-        return 0.0
+        return 0.01
 
     def grade_action(self, predicted: str, actual: str) -> float:
         if predicted == actual:
-            return 1.0
+            return 0.99
 
         acceptable_alternatives = {
             frozenset(("respond", "resolve")),
         }
         if frozenset((predicted, actual)) in acceptable_alternatives:
             return 0.5
-        return 0.0
+        return 0.01
 
     def reset(self) -> Observation:
-        # Fixed dataset order (deterministic; no shuffling).
         self.current_index = 0
         self.step_count = 0
         self.progress = {
@@ -156,6 +147,7 @@ class CustomerSupportEnv:
     def step(
         self, action: Union[Action, Dict[str, Any]]
     ) -> tuple[Observation, float, bool, Dict[str, Any]]:
+
         if self._observation is None or self.current_ticket is None:
             raise RuntimeError("Environment must be reset() before step().")
 
@@ -167,7 +159,7 @@ class CustomerSupportEnv:
             raw_value = action.value
 
         if raw_type not in ("classify", "set_priority", "take_action"):
-            return self._observation, 0.0, False, {"error": "invalid_action"}
+            return self._observation, 0.01, False, {"error": "invalid_action"}
 
         action = Action(
             action_type=cast(
@@ -177,8 +169,8 @@ class CustomerSupportEnv:
         )
 
         self.step_count += 1
-        score = 0.0
-        reward = 0.0
+        score = 0.01
+        reward = 0.01
         expected: str = ""
 
         if action.action_type == "classify":
@@ -189,10 +181,9 @@ class CustomerSupportEnv:
                 actual=self.current_ticket["category"],
             )
             reward = score * 0.4
-            if score == 0.0:
-                reward = max(0.0, reward - 0.1)
             if score >= 0.5:
                 self.progress["classification_done"] = True
+
         elif action.action_type == "set_priority":
             self._observation.priority = action.value
             expected = str(self.current_ticket["priority"])
@@ -201,10 +192,9 @@ class CustomerSupportEnv:
                 actual=self.current_ticket["priority"],
             )
             reward = score * 0.3
-            if score == 0.0:
-                reward = max(0.0, reward - 0.1)
             if score >= 0.5:
                 self.progress["priority_done"] = True
+
         elif action.action_type == "take_action":
             if action.value == "respond":
                 self._observation.status = "in_progress"
@@ -212,30 +202,32 @@ class CustomerSupportEnv:
                 self._observation.status = "resolved"
             elif action.value == "escalate":
                 self._observation.status = "in_progress"
+
             expected = str(self.current_ticket["correct_action"])
             score = self.grade_action(
                 predicted=action.value,
                 actual=self.current_ticket["correct_action"],
             )
             reward = score * 0.3
-            if score == 0.0:
-                reward = max(0.0, reward - 0.1)
             if score >= 0.5:
                 self.progress["action_done"] = True
 
         bonus = 0.2 if all(self.progress.values()) else 0.0
         total_reward = reward + bonus
-        total_reward = min(total_reward, 1.0)
-        reward = total_reward
-        reward = max(0.0, min(reward, 1.0))
+
+        # ✅ STRICT CLAMP
+        total_reward = min(total_reward, 0.99)
+        reward = max(0.01, min(total_reward, 0.99))
 
         done = action.action_type == "take_action" or self.step_count >= 5
+
         info = {
             "task_type": action.action_type,
-            "score": score,
+            "score": max(0.01, min(score, 0.99)),  # ✅ FIX
             "predicted": action.value,
             "expected": expected,
         }
+
         return self._observation, reward, done, info
 
     def state(self) -> Dict[str, int | Dict[str, bool]]:
@@ -247,4 +239,3 @@ class CustomerSupportEnv:
             "step_count": self.step_count,
             "progress": self.progress,
         }
-
