@@ -69,7 +69,6 @@ def main() -> None:
 
     print(f"[START] task={TASK_NAME} env={ENV_NAME} model={MODEL_NAME}", flush=True)
 
-    # SAFE LLM CALL (this was your bug)
     try:
         if base_url and api_key:
             client = OpenAI(
@@ -85,7 +84,6 @@ def main() -> None:
     except Exception:
         pass
 
-    # If API_BASE_URL missing → fail safely
     if not base_url:
         print(f"[END] success=false steps=0 score=0.00 rewards=", flush=True)
         return
@@ -150,7 +148,9 @@ def main() -> None:
         if done:
             break
 
-    score = min(1.0, sum(rewards))
+    # ✅ ONLY FIX APPLIED HERE
+    score = min(0.99, sum(rewards))
+
     success = bool(done and not any_error)
 
     rewards_fmt = ",".join(f"{r:.2f}" for r in rewards)
