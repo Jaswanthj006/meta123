@@ -1,107 +1,102 @@
+---
+title: Customer Support Env
+emoji: 🤖
+colorFrom: blue
+colorTo: green
+sdk: docker
+---
 
+# Customer Support OpenEnv Environment
 
-# Customer Support Ticket Triage OpenEnv Environment
+## Overview
+This project implements a customer support ticket triage system using OpenEnv. It processes support tickets and predicts:
+- category (billing, delivery, technical)
+- priority (low, medium, high)
+- action (respond, resolve, escalate)
 
-This project is a small OpenEnv environment that simulates customer support ticket handling.  
-An AI agent gets one ticket at a time and has to process it like a support teammate would: figure out what kind of issue it is, how urgent it is, and what to do next.
+## Environment Description
+The environment simulates a customer support workflow where:
+- A ticket is received using `/reset`
+- The agent interacts step-by-step using `/step`
+- Each action updates environment state and returns a reward and done flag
 
-## What problem this solves
+## Observation Space
+The observation includes:
+- `ticket_id`: integer
+- `ticket_text`: string
+- `category`: string or null
+- `priority`: string or null
+- `status`: string (open/closed)
 
-Support teams deal with repetitive ticket triage every day. Doing this manually for every single ticket takes time, and important tickets can get delayed.
+## Action Space
+Allowed actions are:
+- `classify` -> values: `billing`, `delivery`, `technical`
+- `set_priority` -> values: `low`, `medium`, `high`
+- `take_action` -> values: `respond`, `resolve`, `escalate`
 
-This environment gives a clean way to test automation logic before using it in real workflows. You can evaluate whether an agent is making useful decisions without connecting to real customer systems.
+Actions must be taken in the correct order to complete the workflow properly.
 
-## How the environment works
+## Reward System
+- Each correct step gives partial reward
+- Total reward is capped at `1.0`
+- Final success requires the correct action sequence and no errors
 
-Each episode starts with a support ticket.  
-The agent then works through three decisions:
+## API Endpoints
 
-- classify the ticket
-- assign a priority
-- choose an action
+### POST /reset
+Returns a new ticket.
 
-The ticket text is visible in the observation, but ground-truth labels stay internal to the environment.
-
-## Tasks
-
-The environment has three task levels:
-
-- **Classification**: identify the issue type (`billing`, `technical`, `delivery`)
-- **Priority**: decide urgency (`low`, `medium`, `high`)
-- **Action**: choose next step (`respond`, `escalate`, `resolve`)
-
-This setup mirrors a real support flow: understand the issue first, then urgency, then execution.
-
-## Reward system
-
-I used weighted rewards so the agent is not judged on a single final action only:
-
-- classification: `0.4`
-- priority: `0.3`
-- action: `0.3`
-
-Classification gets slightly higher weight because bad routing early in the flow usually causes bigger downstream mistakes.
-
-There is also partial scoring (`0.5`) for close answers in some tasks. That helps measure progress instead of treating everything as all-or-nothing.
-
-A small penalty is applied when a prediction is completely wrong (`score == 0.0`). This discourages careless guesses.  
-There is also a bonus for completing all three parts correctly, with final reward safely capped in `[0.0, 1.0]`.
-
-## How to run
-
-### 1) Validate
-
-```bash
-openenv validate
-```
-
-### 2) Run server
-
-```bash
-server
-```
-
-or:
-
-```bash
-python -m server.app
-```
-
-### 3) Deploy
-
-Use your normal OpenEnv deployment flow (after validation passes):
-
-```bash
-openenv deploy
-```
-
-## API usage
-
-The server exposes two endpoints:
-
-- `POST /reset`: starts a new episode and returns initial observation
-- `POST /step`: applies one action and returns observation, reward, done, info
-
-Example action payload for `/step`:
-
+### POST /step
+Request:
 ```json
 {
-  "action_type": "classify",
-  "value": "billing"
+  "action_type": "classify | set_priority | take_action",
+  "value": "string"
 }
 ```
 
-## Inference script
+Response:
+- observation
+- reward
+- done
+- info
 
-`inference.py` runs an LLM-driven loop against the environment API.  
-It prints logs in this format:
+## Inference Logic
+`inference.py`:
+- Calls the environment API
+- Uses rule-based classification
+- Executes 3 steps in order
+- Prints structured logs required by the evaluator
 
-- `[START] ...`
-- `[STEP] ...`
-- `[END] ...`
+## Setup Instructions
 
-That makes it easy to read trajectories quickly during testing.
+### 1. Install dependencies
+```bash
+pip install -r requirements.txt
+```
 
-## Final note
+### 2. Run locally
+```bash
+python inference.py
+```
 
-This project is a practical testbed for checking how well LLM agents handle real support-style workflows end to end, not just isolated prompts.
+### 3. Expected output format
+```text
+[START]
+[STEP]
+[STEP]
+[STEP]
+[END]
+```
+
+## Project Structure
+- `inference.py`
+- `openenv.yaml`
+- `server/`
+- `models.py`
+- `client.py`
+
+## Notes
+- Uses environment variables (`API_BASE_URL`, `API_KEY`)
+- No hardcoded outputs
+- Fully compliant with OpenEnv evaluation
